@@ -111,16 +111,15 @@ public class FileElement {
 
     @Override
     public int hashCode() {
-        return sourceFile.hashCode();
+        return sourceFile.getAbsolutePath().hashCode();
     }
 
     @Override
     public boolean equals(Object o) {
         if (o != null && o instanceof FileElement) {
             FileElement fe = (FileElement) o;
-            return sourceFile.equals(fe.getSourceFile());
+            return sourceFile.getAbsolutePath().equals(fe.getSourceFile().getAbsolutePath());
         }
         return false;
     }
-
 }

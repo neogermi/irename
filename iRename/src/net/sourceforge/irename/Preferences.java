@@ -46,6 +46,8 @@ public class Preferences {
                                                                  };
     public static boolean         retrieveOnlineData             = true;
 
+    public static boolean         isMacOS;
+
     public static String          episodeNameDatabasePagePattern = "http://services.tvrage.com/feeds/episodeinfo.php?key=nQpHEaNBqs74sXpFNHQR&show=%show%&ep=%season%x%episode%";
 
     private static ResourceBundle myResourceBundle;
@@ -92,7 +94,6 @@ public class Preferences {
             in.close();
         }
         catch (Exception e) {
-            //TODO: e.printStackTrace();
             myResourceBundle = ResourceBundle
                     .getBundle("i18n.Localization", new Locale("en", "US"));
             validFileEndings = new LinkedList<String>();
@@ -110,6 +111,8 @@ public class Preferences {
 
             lastOpenedDirectory = System.getProperty("user.home");
         }
+
+        isMacOS = System.getProperty("os.name").equalsIgnoreCase("mac os x");
     }
 
     public static Object getLocalizationValue(String key) {

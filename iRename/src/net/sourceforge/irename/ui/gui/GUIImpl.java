@@ -22,13 +22,11 @@ package net.sourceforge.irename.ui.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Menu;
-import java.awt.MenuBar;
-import java.awt.MenuItem;
-import java.awt.MenuShortcut;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -51,16 +49,21 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
@@ -82,17 +85,19 @@ public class GUIImpl extends JFrame implements Ui {
 
     private static final long       serialVersionUID = -1241641185375728018L;
 
-    private JFileChooser            directoryChooser;
+    private JFileChooser            directoryChooserOther;
+    private FileDialog              directoryChooserMac;
 
-    private MenuItem                openDirMenuItem;
-    private MenuItem                manageFileendingsMenuItem;
-    private MenuItem                managePatternsMenuItem;
-    private MenuItem                changeReplacementRuleMenuItem;
-    private MenuItem                quitMenuItem;
+    private JMenuItem               openDirMenuItem;
+    private JCheckBoxMenuItem       retrieveOnlineDataMenuItem;
+    private JMenuItem               manageFileendingsMenuItem;
+    private JMenuItem               managePatternsMenuItem;
+    private JMenuItem               changeReplacementRuleMenuItem;
+    private JMenuItem               quitMenuItem;
 
     private JButton                 openDirButton;
     private JLabel                  currentDirectoryLabel;
-    private JButton                 renameAll;
+    private JButton                 renameUndoAll;
 
     private IRenameTable            iRenameTable;
 
@@ -108,8 +113,14 @@ public class GUIImpl extends JFrame implements Ui {
         listener = new HashSet<UiCallbackListener>();
         listener.add(iRename);
 
-        directoryChooser = new JFileChooser();
-        directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        if (Preferences.isMacOS) {
+            directoryChooserMac = new FileDialog(this);
+            System.setProperty("apple.awt.fileDialogForDirectories", "true");
+        }
+        else {
+            directoryChooserOther = new JFileChooser();
+            directoryChooserOther.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        }
 
         setSize(Preferences.width, Preferences.height);
         setLocationRelativeTo(null);
@@ -123,10 +134,9 @@ public class GUIImpl extends JFrame implements Ui {
             }
         });
 
-        // TODO: this only works if you release the file on the contentPane!!!
         setTransferHandler(new MyTransferHandler());
 
-        setMenuBar(assembleMenuBar());
+        setJMenuBar(assembleMenuBar());
 
         iRenameTable = new IRenameTable(this);
 
@@ -144,9 +154,9 @@ public class GUIImpl extends JFrame implements Ui {
 
         currentDirectoryLabel = new JLabel(Preferences.getLocalizationString("currentDirLabel"));
 
-        renameAll = new JButton(Preferences.getLocalizationString("renameAllLabel"));
-        renameAll.setEnabled(false);
-        renameAll.addActionListener(new ActionListener() {
+        renameUndoAll = new JButton(Preferences.getLocalizationString("renameAllLabel"));
+        renameUndoAll.setEnabled(false);
+        renameUndoAll.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //TODO
@@ -156,7 +166,7 @@ public class GUIImpl extends JFrame implements Ui {
         JPanel top2Panel = new JPanel();
         top2Panel.setLayout(new BorderLayout());
         top2Panel.add(BorderLayout.WEST, currentDirectoryLabel);
-        top2Panel.add(BorderLayout.EAST, renameAll);
+        top2Panel.add(BorderLayout.EAST, renameUndoAll);
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new GridLayout(2, 1));
@@ -178,11 +188,14 @@ public class GUIImpl extends JFrame implements Ui {
         setVisible(true);
     }
 
-    private MenuBar assembleMenuBar() {
-        MenuBar menu = new MenuBar();
-        Menu fileMenu = new Menu(Preferences.getLocalizationString("fileMenuLabel"));
-        openDirMenuItem = new MenuItem(Preferences.getLocalizationString("openDirMenuLabel"),
-                new MenuShortcut(KeyEvent.VK_O));
+    private JMenuBar assembleMenuBar() {
+
+        int ae = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+
+        JMenuBar menu = new JMenuBar();
+        JMenu fileMenu = new JMenu(Preferences.getLocalizationString("fileMenuLabel"));
+        openDirMenuItem = new JMenuItem(Preferences.getLocalizationString("openDirMenuLabel"));
+        openDirMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ae));
         openDirMenuItem.addActionListener(new ActionListener() {
 
             @Override
@@ -191,9 +204,22 @@ public class GUIImpl extends JFrame implements Ui {
             }
         });
 
-        manageFileendingsMenuItem = new MenuItem(Preferences
-                .getLocalizationString("manageFileendingsMenuLabel"), new MenuShortcut(
-                KeyEvent.VK_M));
+        retrieveOnlineDataMenuItem = new JCheckBoxMenuItem(Preferences
+                .getLocalizationString("retrieveOnlineDataMenuLabel"),
+                Preferences.retrieveOnlineData);
+        retrieveOnlineDataMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ae));
+        retrieveOnlineDataMenuItem.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Preferences.retrieveOnlineData = retrieveOnlineDataMenuItem.isSelected();
+            }
+
+        });
+
+        manageFileendingsMenuItem = new JMenuItem(Preferences
+                .getLocalizationString("manageFileendingsMenuLabel"));
+        manageFileendingsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ae));
         manageFileendingsMenuItem.addActionListener(new ActionListener() {
 
             @Override
@@ -203,8 +229,9 @@ public class GUIImpl extends JFrame implements Ui {
 
         });
 
-        managePatternsMenuItem = new MenuItem(Preferences
-                .getLocalizationString("managePatternsMenuLabel"), new MenuShortcut(KeyEvent.VK_P));
+        managePatternsMenuItem = new JMenuItem(Preferences
+                .getLocalizationString("managePatternsMenuLabel"));
+        managePatternsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ae));
         managePatternsMenuItem.addActionListener(new ActionListener() {
 
             @Override
@@ -213,9 +240,9 @@ public class GUIImpl extends JFrame implements Ui {
             }
         });
 
-        changeReplacementRuleMenuItem = new MenuItem(Preferences
-                .getLocalizationString("changeReplacementRuleMenuLabel"), new MenuShortcut(
-                KeyEvent.VK_R));
+        changeReplacementRuleMenuItem = new JMenuItem(Preferences
+                .getLocalizationString("changeReplacementRuleMenuLabel"));
+        changeReplacementRuleMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ae));
         changeReplacementRuleMenuItem.addActionListener(new ActionListener() {
 
             @Override
@@ -224,8 +251,8 @@ public class GUIImpl extends JFrame implements Ui {
             }
         });
 
-        quitMenuItem = new MenuItem(Preferences.getLocalizationString("quitMenuLabel"),
-                new MenuShortcut(KeyEvent.VK_Q));
+        quitMenuItem = new JMenuItem(Preferences.getLocalizationString("quitMenuLabel"));
+        quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ae));
         quitMenuItem.addActionListener(new ActionListener() {
 
             @Override
@@ -236,14 +263,15 @@ public class GUIImpl extends JFrame implements Ui {
 
         fileMenu.add(openDirMenuItem);
         fileMenu.addSeparator();
+        fileMenu.add(retrieveOnlineDataMenuItem);
         fileMenu.add(manageFileendingsMenuItem);
         fileMenu.add(managePatternsMenuItem);
         fileMenu.add(changeReplacementRuleMenuItem);
         fileMenu.addSeparator();
         fileMenu.add(quitMenuItem);
 
-        Menu helpMenu = new Menu(Preferences.getLocalizationString("helpMenuLabel"));
-        MenuItem aboutMenuItem = new MenuItem(Preferences.getLocalizationString("aboutMenuLabel"));
+        JMenu helpMenu = new JMenu(Preferences.getLocalizationString("helpMenuLabel"));
+        JMenuItem aboutMenuItem = new JMenuItem(Preferences.getLocalizationString("aboutMenuLabel"));
         aboutMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -943,22 +971,41 @@ public class GUIImpl extends JFrame implements Ui {
     }
 
     private void showAboutDialog() {
-        // TODO
+        JOptionPane
+                .showMessageDialog(this, Preferences.getLocalizationString("aboutBoxText"),
+                        Preferences.getLocalizationString("aboutBoxTitle"),
+                        JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void openNewDirectory() {
         File lastOpenedDir = new File(Preferences.lastOpenedDirectory);
         if (lastOpenedDir.isDirectory()) {
-            directoryChooser.setCurrentDirectory(lastOpenedDir);
+            if (Preferences.isMacOS)
+                directoryChooserMac.setDirectory(lastOpenedDir.getAbsolutePath());
+            else
+                directoryChooserOther.setCurrentDirectory(lastOpenedDir);
         }
 
-        int ret = directoryChooser.showOpenDialog(this);
-        if (ret == JFileChooser.APPROVE_OPTION) {
-            File d = directoryChooser.getSelectedFile();
+        File d;
 
+        if (Preferences.isMacOS) {
+            directoryChooserMac.setVisible(true);
+            String dir = directoryChooserMac.getDirectory();
+            dir += directoryChooserMac.getFile();
+            if (dir != null)
+                d = new File(dir);
+            else
+                return;
+        }
+        else {
+            int ret = directoryChooserOther.showOpenDialog(this);
+            if (ret == JFileChooser.APPROVE_OPTION)
+                d = directoryChooserOther.getSelectedFile();
+            else
+                return;
+        }
+        if (d.isDirectory())
             openNewDirectoryHelper(d);
-        }
-
     }
 
     private void openNewDirectoryHelper(File f) {
@@ -966,7 +1013,7 @@ public class GUIImpl extends JFrame implements Ui {
         for (UiCallbackListener uil : listener)
             uil.openNewDirectory(f);
         updateCurrentDirectoryInformation(f);
-        renameAll.setEnabled(true);
+        renameUndoAll.setEnabled(true);
     }
 
     private void updateCurrentDirectoryInformation(File f) {

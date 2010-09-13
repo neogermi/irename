@@ -120,7 +120,7 @@ public class IRenameTableModel extends AbstractTableModel {
                         re.filenameAfter = (String) aValue;
                         break;
                     case 6:
-                        re.performChanges = (Boolean) aValue;
+                        re.isRenamed = (Boolean) aValue;
                         break;
                     }
                     fireTableCellUpdated(rowIndex, columnIndex);
@@ -132,7 +132,7 @@ public class IRenameTableModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         if (0 <= rowIndex && rowIndex < getRowCount()) {
-            if (0 <= columnIndex && columnIndex <= getColumnCount()) {
+            if (0 <= columnIndex && columnIndex < getColumnCount()) {
                 RowElement re = rows.get(rowIndex);
 
                 switch (columnIndex) {
@@ -149,7 +149,7 @@ public class IRenameTableModel extends AbstractTableModel {
                 case 5:
                     return re.filenameAfter;
                 case 6:
-                    return re.performChanges;
+                    return re.isRenamed;
                 }
 
             }
