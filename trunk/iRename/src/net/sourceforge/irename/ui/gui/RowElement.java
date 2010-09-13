@@ -34,7 +34,7 @@ public class RowElement {
 
     public String  filenameAfter;
 
-    public boolean performChanges;
+    public boolean isRenamed;
 
     public RowElement(FileElement fe) {
         filenameBefore = fe.getSourceFile().getName();
@@ -44,6 +44,7 @@ public class RowElement {
         episodeName = fe.getEpisodeName();
         isLoading = false;
         filenameAfter = fe.getTargetFilename();
+        isRenamed = false;
     }
 
     public void update(FileElement fe) {
@@ -52,6 +53,11 @@ public class RowElement {
         episodeNumber = fe.getEpisodeNumber();
         episodeName = fe.getEpisodeName();
         filenameAfter = fe.getTargetFilename();
+    }
+
+    @Override
+    public int hashCode() {
+        return filenameBefore.hashCode();
     }
 
     @Override

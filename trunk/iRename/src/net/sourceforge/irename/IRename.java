@@ -21,8 +21,11 @@ package net.sourceforge.irename;
  */
 
 import java.io.File;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import net.sourceforge.irename.ui.Ui;
 import net.sourceforge.irename.ui.UiCallbackListener;
@@ -59,20 +62,7 @@ public class IRename implements UiCallbackListener {
             for (File f : filesFound) {
                 final FileElement fe = new FileElement(f);
                 ui.addFileElement(fe);
-
-                if (Preferences.retrieveOnlineData) {
-                    Runnable runner = new Runnable() {
-                        @Override
-                        public void run() {
-                            ui.startLoading(fe);
-                            fe.setEpisodeName(Util.retrieveEpisodeName(fe));
-                            fe.setTargetFilename(Util.applyPattern(fe));
-                            ui.stopLoading(fe);
-                            ui.updateData(fe);
-                        }
-                    };
-                    httpRequestThreadPool.execute(runner);
-                }
+                updateFilenameHelper(fe);
             }
         }
     }
@@ -82,15 +72,47 @@ public class IRename implements UiCallbackListener {
         Runnable runner = new Runnable() {
             @Override
             public void run() {
-                if (Preferences.retrieveOnlineData && type != UiCallbackListener.Type.EpisodeName) {
-                    ui.startLoading(fe);
-                    fe.setEpisodeName(Util.retrieveEpisodeName(fe));
-                    ui.stopLoading(fe);
+                if (type != UiCallbackListener.Type.EpisodeName) {
+                    updateFilenameHelper(fe);
                 }
-                fe.setTargetFilename(Util.applyPattern(fe));
-                ui.updateData(fe);
+                else {
+                    fe.setTargetFilename(Util.applyPattern(fe));
+                    ui.updateData(fe);
+                }
             }
         };
+        httpRequestThreadPool.execute(runner);
+    }
+
+    private void updateFilenameHelper(final FileElement fe) {
+        Runnable runner = new Runnable() {
+            @Override
+            public void run() {
+                if (Preferences.retrieveOnlineData) {
+                    ui.startLoading(fe);
+                    ExecutorService es = Executors.newSingleThreadExecutor();
+                    Callable<String> caller = new Callable<String>() {
+                        @Override
+                        public String call() {
+                            return Util.retrieveEpisodeName(fe);
+                        }
+                    };
+                    Future<String> futureTitle = es.submit(caller);
+                    String title;
+                    try {
+                        title = futureTitle.get(30, TimeUnit.SECONDS);
+                    }
+                    catch (Exception e) {
+                        title = fe.getEpisodeName();
+                    }
+                    fe.setEpisodeName(title);
+                    fe.setTargetFilename(Util.applyPattern(fe));
+                    ui.stopLoading(fe);
+                    ui.updateData(fe);
+                }
+            }
+        };
+
         httpRequestThreadPool.execute(runner);
     }
 
@@ -152,8 +174,10 @@ public class IRename implements UiCallbackListener {
     }
 
     public static void main(String[] args) {
-        @SuppressWarnings("unused")
-        IRename iRename = new IRename();
+        if (Preferences.isMacOS) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+        }
+        new IRename();
     }
 
     @Override

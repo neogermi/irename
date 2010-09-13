@@ -20,21 +20,23 @@ package net.sourceforge.irename.ui.gui;
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.awt.Color;
 import java.awt.Component;
 import java.net.URL;
 
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.JTextPane;
+import javax.swing.table.TableCellRenderer;
 
 import net.sourceforge.irename.util.AnimatedIcon;
 
-public class IRenameTableCellRenderer extends DefaultTableCellRenderer {
+public class IRenameTableCellRenderer extends JTextPane implements TableCellRenderer {
 
     private static final long   serialVersionUID = 779052442287351934L;
     private static AnimatedIcon loadingImage;
-    private static JLabel       label;
+
+    private static final Color  GREEN            = new Color(57, 115, 76);
 
     static {
         URL imgURL = IRenameTableCellRenderer.class.getResource("/icons/ajax-loader.gif");
@@ -44,46 +46,46 @@ public class IRenameTableCellRenderer extends DefaultTableCellRenderer {
         else {
             loadingImage = null;
         }
-        label = new JLabel();
-        label.setOpaque(true);
+    }
+
+    public IRenameTableCellRenderer() {
+        super();
+        setOpaque(true);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
             boolean hasFocus, int row, int column) {
-        if (column == 4) {
+        if (column == 6)
+            return table.getDefaultRenderer(Boolean.class).getTableCellRendererComponent(table,
+                    value, isSelected, hasFocus, row, column);
+        else {
             String text = (String) value;
             boolean isLoading = ((IRenameTable) table).isLoading(row);
+            boolean isRenamed = ((IRenameTable) table).isRenamed(row);
 
-            if (isLoading) {
-                label.setIcon(loadingImage);
-                label.setText(null);
+            if (isRenamed)
+                setForeground(GREEN);
+            else
+                setForeground(Color.black);
+
+            if (isLoading && column == 4) {
+                setText("");
+                insertIcon(loadingImage);
             }
             else {
-                label.setIcon(null);
-                label.setText(text);
+                setText(text);
             }
             if (isSelected) {
-                label.setBackground(table.getSelectionBackground());
-                label.setForeground(table.getSelectionForeground());
+                setBackground(table.getSelectionBackground());
+                setForeground(table.getSelectionForeground());
             }
             else {
-                label.setBackground(table.getBackground());
-                label.setForeground(table.getForeground());
+                setBackground(table.getBackground());
+                setForeground(table.getForeground());
             }
 
-            this.setSize(table.getColumnModel().getColumn(column).getWidth(), table
-                    .getRowHeight(row));
-            int height_wanted = 20;
-            if (height_wanted != table.getRowHeight(row)) {
-                table.setRowHeight(row, height_wanted + 2);
-            }
-
-            return label;
+            return this;
         }
-        else
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
-                    column);
-
     }
 }

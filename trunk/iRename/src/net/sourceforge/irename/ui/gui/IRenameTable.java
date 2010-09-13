@@ -46,7 +46,7 @@ public class IRenameTable extends JTable {
     private GUIImpl                      parent;
 
     private IRenameTableModel            tm;
-    private IRenameTableCellRenderer     episodeNameRenderer;
+    private IRenameTableCellRenderer     defaultCellRenderer;
     private Map<FileElement, RowElement> fe2re;
     private List<FileElement>            row2fe;
 
@@ -65,7 +65,9 @@ public class IRenameTable extends JTable {
         setModel(tm);
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        episodeNameRenderer = new IRenameTableCellRenderer();
+        defaultCellRenderer = new IRenameTableCellRenderer();
+
+        setRowHeight(20);
 
         for (int i = 0; i < tm.getColumnCount(); i++)
             getColumnModel().getColumn(i).setPreferredWidth(Preferences.columnWidth[i]);
@@ -81,9 +83,9 @@ public class IRenameTable extends JTable {
                         RowElement re = fe2re.get(fe);
 
                         if (fe != null) {
-                            re.performChanges = !re.performChanges;
+                            re.isRenamed = !re.isRenamed;
 
-                            boolean val = re.performChanges;
+                            boolean val = re.isRenamed;
                             if (val) {
                                 parent.renameFile(fe);
                             }
@@ -124,7 +126,7 @@ public class IRenameTable extends JTable {
 
                         if (fe != null) {
                             if (col == 6) { //rename or undo!
-                                boolean val = re.performChanges;
+                                boolean val = re.isRenamed;
 
                                 if (val) {
                                     parent.renameFile(fe);
@@ -169,13 +171,7 @@ public class IRenameTable extends JTable {
 
     @Override
     public TableCellRenderer getCellRenderer(int row, int column) {
-        if (column == 4) {
-            return episodeNameRenderer;
-        }
-        else {
-            return super.getCellRenderer(row, column);
-        }
-
+        return defaultCellRenderer;
     }
 
     public void newDirOpened(File f) {
@@ -222,6 +218,13 @@ public class IRenameTable extends JTable {
         RowElement re = fe2re.get(fe);
 
         return re.isLoading;
+    }
+
+    public boolean isRenamed(int row) {
+        FileElement fe = row2fe.get(row);
+        RowElement re = fe2re.get(fe);
+
+        return re.isRenamed;
     }
 
 }
