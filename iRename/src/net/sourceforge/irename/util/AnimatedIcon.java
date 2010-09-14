@@ -20,26 +20,15 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import javax.swing.CellRendererPane;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
-
-import sun.awt.image.GifImageDecoder;
-import sun.awt.image.ImageDecoder;
-import sun.awt.image.InputStreamImageSource;
 
 /** Ensures animated icons are properly handled within objects that use
 * renderers within a {@link CellRendererPane} to render the icon.  Keeps
@@ -50,64 +39,9 @@ import sun.awt.image.InputStreamImageSource;
 */
 public class AnimatedIcon implements Icon {
 
-    /** Cache results to reduce decoding overhead. */
-    private static Map<Image, Boolean> decoded = new WeakHashMap<Image, Boolean>();
-
     /** Returns whether the given icon is an animated GIF. */
     public static boolean isAnimated(Icon icon) {
-        if (icon instanceof ImageIcon) {
-            Image image = ((ImageIcon) icon).getImage();
-            if (image != null) {
-                // Quick check for commonly-occurring animated GIF comment
-                Object comment = image.getProperty("comment", null);
-                if (String.valueOf(comment).startsWith("GifBuilder"))
-                    return true;
-
-                // Check cache of already-decoded images
-                if (decoded.containsKey(image)) {
-                    return Boolean.TRUE.equals(decoded.get(image));
-                }
-
-                InputStream is = null;
-                try {
-                    URL url = new URL(icon.toString());
-                    is = url.openConnection().getInputStream();
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-                if (is == null) {
-                    try {
-                        // Beware: lots of hackery to obtain the image input stream
-                        // Be sure to catch security exceptions
-                        ImageProducer p = image.getSource();
-                        if (p instanceof InputStreamImageSource) {
-                            Method m = InputStreamImageSource.class.getDeclaredMethod("getDecoder");
-                            m.setAccessible(true);
-                            ImageDecoder d = (ImageDecoder) m.invoke(p, (Object[]) null);
-                            if (d instanceof GifImageDecoder) {
-                                GifImageDecoder gd = (GifImageDecoder) d;
-                                Field input = ImageDecoder.class.getDeclaredField("input");
-                                input.setAccessible(true);
-                                is = (InputStream) input.get(gd);
-                            }
-                        }
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                if (is != null) {
-                    GifDecoder decoder = new GifDecoder();
-                    decoder.read(is);
-                    boolean animated = decoder.getFrameCount() > 1;
-                    decoded.put(image, Boolean.valueOf(animated));
-                    return animated;
-                }
-            }
-            return false;
-        }
-        return icon instanceof AnimatedIcon;
+        return true;
     }
 
     private ImageIcon        original;
