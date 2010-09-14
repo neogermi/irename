@@ -159,7 +159,7 @@ public class GUIImpl extends JFrame implements Ui {
         renameUndoAll.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //TODO
+                iRenameTable.renameUndoAll();
             }
         });
 

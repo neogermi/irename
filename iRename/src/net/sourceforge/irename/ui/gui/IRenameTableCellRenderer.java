@@ -25,13 +25,13 @@ import java.awt.Component;
 import java.net.URL;
 
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.JTextPane;
 import javax.swing.table.TableCellRenderer;
 
 import net.sourceforge.irename.util.AnimatedIcon;
 
-public class IRenameTableCellRenderer extends JTextPane implements TableCellRenderer {
+public class IRenameTableCellRenderer extends JLabel implements TableCellRenderer {
 
     private static final long   serialVersionUID = 779052442287351934L;
     private static AnimatedIcon loadingImage;
@@ -71,18 +71,25 @@ public class IRenameTableCellRenderer extends JTextPane implements TableCellRend
 
             if (isLoading && column == 4) {
                 setText("");
-                insertIcon(loadingImage);
+                setIcon(loadingImage);
             }
             else {
+                setIcon(null);
                 setText(text);
             }
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
-                setForeground(table.getSelectionForeground());
+                if (isRenamed)
+                    setForeground(GREEN);
+                else
+                    setForeground(table.getSelectionForeground());
             }
             else {
                 setBackground(table.getBackground());
-                setForeground(table.getForeground());
+                if (isRenamed)
+                    setForeground(GREEN);
+                else
+                    setForeground(table.getForeground());
             }
 
             return this;
