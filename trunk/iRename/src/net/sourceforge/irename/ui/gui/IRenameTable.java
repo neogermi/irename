@@ -33,7 +33,7 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import net.sourceforge.irename.Preferences;
 import net.sourceforge.irename.ui.UiCallbackListener;
@@ -167,11 +167,11 @@ public class IRenameTable extends JTable {
         });
 
         setIntercellSpacing(new Dimension(5, 5));
-    }
 
-    @Override
-    public TableCellRenderer getCellRenderer(int row, int column) {
-        return defaultCellRenderer;
+        for (int i = 0; i < tm.getColumnCount(); i++) {
+            TableColumn tc = columnModel.getColumn(i);
+            tc.setCellRenderer(defaultCellRenderer);
+        }
     }
 
     public void newDirOpened(File f) {
@@ -225,6 +225,23 @@ public class IRenameTable extends JTable {
         RowElement re = fe2re.get(fe);
 
         return re.isRenamed;
+    }
+
+    public void renameUndoAll() {
+        for (int i = 0; i < row2fe.size(); i++) {
+            FileElement fe = row2fe.get(i);
+            RowElement re = fe2re.get(fe);
+
+            if (fe != null) {
+                boolean val = re.isRenamed;
+                if (val)
+                    parent.renameFile(fe);
+                else
+                    parent.undoRename(fe);
+                re.isRenamed = !re.isRenamed;
+                tm.fireTableRowsUpdated(i, i);
+            }
+        }
     }
 
 }
